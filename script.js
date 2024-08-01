@@ -75,6 +75,7 @@ function createSection(sectionName, molecules) {
         input.type = 'number';
         input.value = '0';
         input.min = '0';
+        input.step = 'any'; // Permite números decimales
         input.id = `${sectionName}-${molecule}`;
         inputDiv.appendChild(input);
         
@@ -90,6 +91,9 @@ function populateSections() {
         const sectionElement = createSection(section, data[section]);
         sectionsContainer.appendChild(sectionElement);
     });
+
+    const integrationSection = createIntegrationSection();
+    sectionsContainer.appendChild(integrationSection);
 }
 
 function calculate() {
@@ -97,7 +101,7 @@ function calculate() {
 
     Object.keys(data).forEach(section => {
         Object.keys(data[section]).forEach(molecule => {
-            const count = parseInt(document.getElementById(`${section}-${molecule}`).value) || 0;
+            const count = parseFloat(document.getElementById(`${section}-${molecule}`).value) || 0;
             const [a, b, c, d] = data[section][molecule];
             total_a += a * count;
             total_b += b * count;
@@ -118,6 +122,49 @@ function calculate() {
                            `${d}T<sup>3</sup>`;
     
     document.getElementById('result').innerHTML = `Resultado: ${expandedResult} J/(mol·K)`;
+    const integralSection = document.getElementById('integral-section');
+    integralSection.style.display = 'block';
+}
+
+function calculateIntegral() {
+    const resultElement = document.getElementById('result');
+    const resultText = resultElement.innerHTML;
+    const match = resultText.match(/Resultado:\s*(-?\d+\.?\d*)\s*\+\s*(-?\d+\.?\d*)T\s*\+\s*(-?\d+\.?\d*)T<sup>2<\/sup>\s*\+\s*(-?\d+\.?\d*)T<sup>3<\/sup>/);
+
+    if (!match) {
+        alert('Por favor, calcule primero la fórmula de Cp.');
+        return;
+    }
+
+    const [, a, b, c, d] = match.map(Number);
+
+    const temp1 = parseFloat(document.getElementById('temp1').value);
+    const temp2 = parseFloat(document.getElementById('temp2').value);
+
+    if (isNaN(temp1) || isNaN(temp2) || temp1 >= temp2) {
+        alert('Por favor, ingrese temperaturas válidas y asegúrese de que la temperatura 1 sea menor que la temperatura 2.');
+        return;
+    }
+
+    // Definir la función a integrar
+    const f = (t) => a + b*t + c*Math.pow(t, 2) + d*Math.pow(t, 3);
+
+    // Calcular la integral definida usando el método de los trapecios
+    const integrate = (f, a, b, n = 1000) => {
+        const h = (b - a) / n;
+        let sum = 0.5 * (f(a) + f(b));
+        for (let i = 1; i < n; i++) {
+            sum += f(a + i * h);
+        }
+        return sum * h;
+    };
+
+    const result = integrate(f, temp1, temp2);
+
+    document.getElementById('integral-result').innerHTML = `
+        El resultado de la integral entre ${temp1}K y ${temp2}K es:<br>
+        ${result.toFixed(2)} J/mol
+    `;
 }
 
 function clearInputs() {
@@ -126,6 +173,41 @@ function clearInputs() {
         input.value = '0';
     });
     document.getElementById('result').innerText = 'Resultado: ';
+    document.getElementById('integral-result').innerText = '';
+    document.getElementById('integral-section').style.display = 'none';
+}
+
+function createIntegrationSection() {
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'section';
+    sectionDiv.id = 'integral-section';
+    sectionDiv.style.display = 'none';
+    
+    const title = document.createElement('h2');
+    title.className = 'section-title';
+    title.innerText = 'Cálculo de la Integral';
+    sectionDiv.appendChild(title);
+
+    const inputDiv1 = document.createElement('div');
+    inputDiv1.className = 'molecule-input';
+    inputDiv1.innerHTML = '<label for="temp1">Temperatura 1 (K):</label><input type="number" id="temp1" step="any">';
+    sectionDiv.appendChild(inputDiv1);
+
+    const inputDiv2 = document.createElement('div');
+    inputDiv2.className = 'molecule-input';
+    inputDiv2.innerHTML = '<label for="temp2">Temperatura 2 (K):</label><input type="number" id="temp2" step="any">';
+    sectionDiv.appendChild(inputDiv2);
+
+    const calculateButton = document.createElement('button');
+    calculateButton.innerText = 'Calcular Integral';
+    calculateButton.addEventListener('click', calculateIntegral);
+    sectionDiv.appendChild(calculateButton);
+
+    const resultDiv = document.createElement('div');
+    resultDiv.id = 'integral-result';
+    sectionDiv.appendChild(resultDiv);
+
+    return sectionDiv;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
