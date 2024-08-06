@@ -96,34 +96,77 @@ function populateSections() {
     sectionsContainer.appendChild(integrationSection);
 }
 
-function calculate() {
-    let total_a = 0, total_b = 0, total_c = 0, total_d = 0;
+function showConfirmationDialog(callback) {
+    // Crear el overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    
+    // Crear el diálogo
+    const dialog = document.createElement('div');
+    dialog.className = 'dialog';
+    
+    // Crear el mensaje
+    const message = document.createElement('p');
+    message.innerText = '¿Está seguro de que el compuesto es un gas?';
+    dialog.appendChild(message);
+    
+    // Crear los botones
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'button-container';
 
-    Object.keys(data).forEach(section => {
-        Object.keys(data[section]).forEach(molecule => {
-            const count = parseFloat(document.getElementById(`${section}-${molecule}`).value) || 0;
-            const [a, b, c, d] = data[section][molecule];
-            total_a += a * count;
-            total_b += b * count;
-            total_c += c * count;
-            total_d += d * count;
-        });
+    const cancelButton = document.createElement('button');
+    cancelButton.innerText = 'Cancelar';
+    cancelButton.addEventListener('click', () => {
+        document.body.removeChild(overlay);
     });
 
-    // Resolvemos las operaciones dentro de los paréntesis
-    const a = (total_a - 37.93).toFixed(4);
-    const b = (total_b + 0.210).toFixed(4);
-    const c = (total_c - 3.91e-4).toFixed(6);
-    const d = (total_d + 2.06e-7).toFixed(8);
+    const continueButton = document.createElement('button');
+    continueButton.innerText = 'Continuar';
+    continueButton.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+        callback(); // Llamar al callback si se confirma
+    });
 
-    const expandedResult = `${a} + ` +
-                           `${b}T + ` +
-                           `${c}T<sup>2</sup> + ` +
-                           `${d}T<sup>3</sup>`;
-    
-    document.getElementById('result').innerHTML = `Resultado: ${expandedResult} J/(mol·K)`;
-    const integralSection = document.getElementById('integral-section');
-    integralSection.style.display = 'block';
+    buttonContainer.appendChild(cancelButton);
+    buttonContainer.appendChild(continueButton);
+    dialog.appendChild(buttonContainer);
+
+    // Agregar al cuerpo del documento
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+}
+
+
+function calculate() {
+    showConfirmationDialog(() => {
+        let total_a = 0, total_b = 0, total_c = 0, total_d = 0;
+
+        Object.keys(data).forEach(section => {
+            Object.keys(data[section]).forEach(molecule => {
+                const count = parseFloat(document.getElementById(`${section}-${molecule}`).value) || 0;
+                const [a, b, c, d] = data[section][molecule];
+                total_a += a * count;
+                total_b += b * count;
+                total_c += c * count;
+                total_d += d * count;
+            });
+        });
+
+        // Resolvemos las operaciones dentro de los paréntesis
+        const a = (total_a - 37.93).toFixed(4);
+        const b = (total_b + 0.210).toFixed(4);
+        const c = (total_c - 3.91e-4).toFixed(6);
+        const d = (total_d + 2.06e-7).toFixed(8);
+
+        const expandedResult = `${a} + ` +
+                               `${b}T + ` +
+                               `${c}T<sup>2</sup> + ` +
+                               `${d}T<sup>3</sup>`;
+
+        document.getElementById('result').innerHTML = `Resultado: ${expandedResult} J/(mol·K)`;
+        const integralSection = document.getElementById('integral-section');
+        integralSection.style.display = 'block';
+    });
 }
 
 function calculateIntegral() {
@@ -141,8 +184,8 @@ function calculateIntegral() {
     const temp1 = parseFloat(document.getElementById('temp1').value);
     const temp2 = parseFloat(document.getElementById('temp2').value);
 
-    if (isNaN(temp1) || isNaN(temp2) || temp1 >= temp2) {
-        alert('Por favor, ingrese temperaturas válidas y asegúrese de que la temperatura 1 sea menor que la temperatura 2.');
+    if (isNaN(temp1) || isNaN(temp2)) {
+        alert('Por favor, ingrese temperaturas válidas.');
         return;
     }
 
@@ -175,6 +218,9 @@ function clearInputs() {
     document.getElementById('result').innerText = 'Resultado: ';
     document.getElementById('integral-result').innerText = '';
     document.getElementById('integral-section').style.display = 'none';
+    document.getElementById('print-results').innerHTML = '';
+
+    
 }
 
 function createIntegrationSection() {
@@ -209,9 +255,53 @@ function createIntegrationSection() {
 
     return sectionDiv;
 }
+function printResults() {
+    let usedMolecules = '';
+    let cpFormula = '';
+    let enthalpyResult = '';
+
+    // Recopilar moléculas utilizadas
+    Object.keys(data).forEach(section => {
+        Object.keys(data[section]).forEach(molecule => {
+            const count = parseFloat(document.getElementById(`${section}-${molecule}`).value) || 0;
+            if (count > 0) {
+                usedMolecules += `${molecule}: ${count}\n`;
+            }
+        });
+    });
+
+    // Obtener fórmula CP
+    const resultElement = document.getElementById('result');
+    cpFormula = resultElement.innerText.replace('Resultado: ', '');
+
+    // Obtener resultado de la entalpía
+    const integralResultElement = document.getElementById('integral-result');
+    enthalpyResult = integralResultElement ? integralResultElement.innerText : 'No calculado';
+
+    // Crear contenido para imprimir
+    const printContent = `
+        <h2>Resultados del cálculo</h2>
+        <h3>Moléculas utilizadas:</h3>
+        <pre>${usedMolecules}</pre>
+        <h3>Fórmula CP:</h3>
+        <p>${cpFormula}</p>
+        <h3>Resultado de la entalpía:</h3>
+        <p>${enthalpyResult}</p>
+    `;
+
+    // Mostrar resultados en la sección de impresión
+    const printResultsElement = document.getElementById('print-results');
+    printResultsElement.innerHTML = printContent;
+
+    // Imprimir
+    window.print();
+}
+
+
 
 document.addEventListener('DOMContentLoaded', () => {
     populateSections();
     document.getElementById('calculate-btn').addEventListener('click', calculate);
     document.getElementById('clear-btn').addEventListener('click', clearInputs);
+    document.getElementById('print-btn').addEventListener('click', printResults);
 });

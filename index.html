@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estimacion CP</title>
+    <title>Estimación CP (gases) Método de Joback</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>Estimación CP (gases) Método de Joback</h1>
 
-        <div id="sections-container">
-            <!-- Las secciones se generarán dinámicamente con JavaScript -->
-        </div>
+        <div id="sections-container"></div>
 
         <div class="buttons">
             <button id="calculate-btn">Calcular</button>
             <button id="clear-btn">Limpiar</button>
+            <button id="print-btn">Imprimir Resultados</button>
         </div>
 
-        <div id="result">
-            Resultado:
+        <div id="results-container" class="screen-only">
+            <div id="result">
+                Resultado:
+            </div>
+            <div id="integral-section"></div>
         </div>
 
-        <div id="integral-section">
-            <!-- La sección de la integral se generará dinámicamente con JavaScript -->
-        </div>
+        <div id="print-results" class="print-only"></div>
     </div>
 
     <footer>
@@ -34,13 +34,11 @@
             <div class="footer-section">
                 <img src="/img/uce.png" alt="Escudo UCE">
             </div>
-
             <div class="footer-section">
                 <h3>Universidad Central del Ecuador</h3>
                 <p>Carrera de Ingeniería Química</p>
                 <p>Cálculos Básicos en Ingeniería Química II</p>
             </div>
-
             <div class="footer-section">
                 <h3>Autoras:</h3>
                 <p>Nayeli Maricela Gonzalez Villarreal</p>
